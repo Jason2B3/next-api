@@ -1,6 +1,17 @@
 import fs from "fs";
 import path from "path";
 
+// Create a filepath to your local JSON file
+export function buildFeedbackPath() {
+  return path.join(process.cwd(), "data", "feedback.json"); // 1
+}
+// Read local JSON file data and convert it to JS
+export function extractFeedback(filePath) {
+  const jsonData = fs.readFileSync(filePath); // 2
+  const data = JSON.parse(jsonData); // 3
+  return data;
+}
+
 //# Create our API Route File (no syntax inside here is public)
 export default function handler(req, res) {
   if (req.method === "POST") {
@@ -14,26 +25,22 @@ export default function handler(req, res) {
       text: feedbackText,
     };
     // Store the reformatted data object in a file or database
-    const filePath = path.join(process.cwd(), "data", "feedback.json"); // 1
-    const jsonData = fs.readFileSync(filePath); // 2
-    const jsData = JSON.parse(jsonData); // 3
+    const filePath = buildFeedbackPath(); // 1
+    const jsData = extractFeedback(filePath); // 2-3
     jsData.push(newFeedback); // 4
     fs.writeFileSync(filePath, JSON.stringify(jsData)); // 5
     res.status(201).json({ message: "New resources created!" }); // 6
   }
   if (req.method === "GET") {
-    const filePath = path.join(process.cwd(), "data", "feedback.json"); // 1
-    const jsonData = fs.readFileSync(filePath); // 2
-    const jsData = JSON.parse(jsonData); // convert to JS in here
+    const filePath = buildFeedbackPath(); // 1
+    const jsData = extractFeedback(filePath); // 2-3
     res
       .status(200)
       .json({ message: "Data fetched successfully", data: jsData }); // 6
   } else {
-    res
-      .status(404)
-      .json({
-        message: "Did not code any useful actions for that request type!",
-      });
+    res.status(404).json({
+      message: "Did not code any useful actions for that request type!",
+    });
   }
 }
 //# Explanation for storing the reformatted data

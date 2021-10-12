@@ -1,7 +1,20 @@
 import React, { useRef, useState } from "react";
 import classes from "./index.module.css";
+// ▼ ▼ Hidden from client side if only used inside getStaticProps or getServerSideProps
+import { buildFeedbackPath, extractFeedback } from "../pages/api/feedback";
 
-function HomePage() {
+export function getStaticProps() {
+  // Use helper functions to make a GET request to our local file feedback.json
+  const filePath = buildFeedbackPath();
+  const data = extractFeedback(filePath);
+  // Feed the data we retreive as props for the component function
+  return {
+    props: { feedbackItems: data },
+  };
+}
+
+function HomePage(props) {
+  console.log(props.feedbackItems);
   const [show, setShow] = useState(null);
   const emailInputRef = useRef();
   const feedbackInputRef = useRef();
@@ -26,7 +39,7 @@ function HomePage() {
     const response = await fetch("/api/feedback");
     const parsedData = await response.json();
     console.log(parsedData);
-    setShow(parsedData) // show data on the webpage
+    setShow(parsedData); // show data on the webpage
   };
 
   return (
@@ -42,7 +55,7 @@ function HomePage() {
       </div>
       <button onClick={submitFormHandler}>Send Feedback</button>
       <button onClick={viewFeedbackHandler}>View Existing Feedback</button>
-      <code>{show? JSON.stringify(show):""}</code>
+      <code>{show ? JSON.stringify(show) : ""}</code>
     </section>
   );
 }
