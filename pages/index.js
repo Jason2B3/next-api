@@ -1,7 +1,8 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import classes from "./index.module.css";
 
 function HomePage() {
+  const [show, setShow] = useState(null);
   const emailInputRef = useRef();
   const feedbackInputRef = useRef();
 
@@ -9,7 +10,6 @@ function HomePage() {
     event.preventDefault();
     const enteredEmail = emailInputRef.current.value;
     const enteredFeedback = feedbackInputRef.current.value;
-
     // Make a request to your API route in api/feedback.js
     // Should add new array entries for each feedback submission
     fetch("/api/feedback", {
@@ -21,6 +21,13 @@ function HomePage() {
       headers: { "Content-Type": "application/json" },
     });
   }; // skipped validation for email/password
+
+  const viewFeedbackHandler = async function () {
+    const response = await fetch("/api/feedback");
+    const parsedData = await response.json();
+    console.log(parsedData);
+    setShow(parsedData) // show data on the webpage
+  };
 
   return (
     <section className={classes.overall}>
@@ -34,6 +41,8 @@ function HomePage() {
         <input id="feedback" rows="5" ref={feedbackInputRef} />
       </div>
       <button onClick={submitFormHandler}>Send Feedback</button>
+      <button onClick={viewFeedbackHandler}>View Existing Feedback</button>
+      <code>{show? JSON.stringify(show):""}</code>
     </section>
   );
 }
