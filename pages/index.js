@@ -1,5 +1,8 @@
 import React, { useRef, useState } from "react";
 import classes from "./index.module.css";
+import {useCustomContext} from "../context/global"
+import { useSelector, useDispatch } from "react-redux";
+import { counterActions } from "../context/store";
 // ▼ ▼ Hidden from client side if only used inside getStaticProps or getServerSideProps
 import { buildFeedbackPath, extractFeedback } from "../pages/api/feedback";
 import EmailListItem from "../components/EmailListItem";
@@ -15,7 +18,13 @@ export function getStaticProps() {
 }
 
 function HomePage(props) {
-  console.log(props.feedbackItems);
+  //% Test out the Context API
+  const {count}= useCustomContext()
+  console.log(count)
+  //% Test out Redux Toolkit
+  const counterVal = useSelector((state) => state.counter); 
+
+  // ——————————————————————————————————————————————————————
   const [show, setShow] = useState(null);
   const emailInputRef = useRef();
   const feedbackInputRef = useRef();
