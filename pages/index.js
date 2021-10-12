@@ -2,6 +2,7 @@ import React, { useRef, useState } from "react";
 import classes from "./index.module.css";
 // ▼ ▼ Hidden from client side if only used inside getStaticProps or getServerSideProps
 import { buildFeedbackPath, extractFeedback } from "../pages/api/feedback";
+import EmailListItem from "../components/EmailListItem";
 
 export function getStaticProps() {
   // Use helper functions to make a GET request to our local file feedback.json
@@ -56,6 +57,9 @@ function HomePage(props) {
       <button onClick={submitFormHandler}>Send Feedback</button>
       <button onClick={viewFeedbackHandler}>View Existing Feedback</button>
       <code>{show ? JSON.stringify(show) : ""}</code>
+      {props.feedbackItems.map((ent, ind) => {
+        return <EmailListItem key={ind} entry={ent} index={ind} />;
+      })}
     </section>
   );
 }
