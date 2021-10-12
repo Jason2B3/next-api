@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 
+//# Create our API Route File (no syntax inside here is public)
 export default function handler(req, res) {
   if (req.method === "POST") {
     // Extract data from incoming POST request
@@ -20,10 +21,10 @@ export default function handler(req, res) {
     fs.writeFileSync(filePath, JSON.stringify(jsData)) // 5 
     res.status(200).json({message: 'New resources created!'}) // 6
   } else{
-    res.status(404).json({message: 'Did not code any usefula ctions for that request type!'})
+    res.status(404).json({message: 'Did not code any useful actions for that request type!'})
   }
 
-} // no syntax inside here is public
+} 
 
 //# Explanation for storing the reformatted data
 // 1-2) Create a filepath to your local JSON file then read it
@@ -31,5 +32,8 @@ export default function handler(req, res) {
 // 4) Add to it using .push (feedback.json is an array, not an object. Just look)
 // 5.0) Convert your updated jsonData object back to JSON format
 // 5.1) Overwrite the file that filepath points to with your updated newly-JSON data object
+
 // 6) Send a response object back with the 201 success code which is often sued for POST requests
+//    Can also send back the data we updated our json file with if you want 
+//    res.status(404).json({message: '', data: jsData})
 
