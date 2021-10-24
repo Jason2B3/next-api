@@ -1,0 +1,6 @@
+
+MONGO CONNECTION URI DEFAULT:
+mongodb+srv://JasonB:<password>@first-cluster.g9k83.mongodb.net/myFirstDatabase?retryWrites=true&w=majority
+
+EDITED
+mongodb+srv://JasonB:TM01Focus@first-cluster.g9k83.mongodb.net/sample_mflix?retryWrites=true&w=majority
