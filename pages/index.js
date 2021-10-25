@@ -1,75 +1,78 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import classes from "./index.module.css";
-import { useCustomContext } from "../context/global";
-import { useSelector, useDispatch } from "react-redux";
-import { counterActions } from "../context/store";
-// ▼ ▼ Hidden from client side if only used inside getStaticProps or getServerSideProps
-import { buildFeedbackPath, extractFeedback } from "../pages/api/feedback";
-import EmailListItem from "../components/EmailListItem";
+import { MongoClient } from "mongodb";
 
-export async function getStaticProps() {
-  // Use helper functions to make a GET request to our local file feedback.json
-  const filePath = buildFeedbackPath();
-  const data = extractFeedback(filePath);
-  // Feed the data we retreive as props for the component function
+export async function getServerSideProps() {
+  // READ our database on startup 
+  // Can't fetch() API routes directly in pre-render methods, so we write our code manually)
+  const cluster = {
+    username: "JasonB",
+    mongoPassword: "TM01Focus",
+    database: "email-list",
+    collection: "demo2",
+  };
+  const mongoURI = `mongodb+srv://JasonB:${cluster.mongoPassword}@first-cluster.g9k83.mongodb.net/${cluster.database}?retryWrites=true&w=majority`;
+
+  const client = await MongoClient.connect(mongoURI);
+  const db = client.db(); // get ahold of that database
+  const collection = db.collection(cluster.collection);
+  const results = await collection.find().sort().toArray(); // can add .limit() before .toArray()
+  // Bug workaround ▼▼ (just parse your JSON-ified return from the database)
+  const parsedResults = JSON.parse(JSON.stringify(results));
+  client.close(); // close the database instance
   return {
-    props: { feedbackItems: data },
+    props: { mongoData: parsedResults },
   };
 }
 
 function HomePage(props) {
-  //% Test out the Context API
-  const { count } = useCustomContext();
-  console.log(count);
-  //% Test out Redux Toolkit
-  const counterVal = useSelector((state) => state.counter);
-
-  // ——————————————————————————————————————————————————————
-  const [show, setShow] = useState(null);
   const emailInputRef = useRef();
   const feedbackInputRef = useRef();
 
-  const submitFormHandler = function (event) {
+  // CREATE a new doc when we submit using our form
+  // UPDATE if the email is already in the list
+  const submitFormHandler = async function (event) {
     event.preventDefault();
     const enteredEmail = emailInputRef.current.value;
     const enteredFeedback = feedbackInputRef.current.value;
-    // Make a request to your API route in api/feedback.js
-    // Should add new array entries for each feedback submission
-    fetch("/api/feedback", {
-      method: "POST", //we coded API actions for this request type
+
+    const response = await fetch("/api/mongo/crud", {
+      method: "POST",
       body: JSON.stringify({
         email: enteredEmail, // convert the data you're storing into JSON
-        text: enteredFeedback,
+        comment: enteredFeedback,
       }),
       headers: { "Content-Type": "application/json" },
     });
+    const parsed = await response.json();
+    console.log(parsed);
   }; // skipped validation for email/password
 
-  const viewFeedbackHandler = async function () {
-    const response = await fetch("/api/feedback");
-    const parsedData = await response.json();
-    console.log(parsedData);
-    setShow(parsedData); // show data on the webpage
-  };
 
+  // DELETE if you hit the remove button
+  const removeHandler= async function(){
+
+  }
   return (
-    <section className={classes.overall}>
-      <h1>The Home Page</h1>
-      <div>
-        <label htmlFor="email">Your Email Address</label>
-        <input type="email" id="email" ref={emailInputRef} />
-      </div>
-      <div>
-        <label htmlFor="feedback">Your Feedback</label>
-        <input id="feedback" rows="5" ref={feedbackInputRef} />
-      </div>
-      <button onClick={submitFormHandler}>Send Feedback</button>
-      <button onClick={viewFeedbackHandler}>View Existing Feedback</button>
-      <code>{show ? JSON.stringify(show) : ""}</code>
-      {props.feedbackItems.map((ent, ind) => {
-        return <EmailListItem key={ind} entry={ent} index={ind} />;
+    <>
+      <section className={classes.overall}>
+        <h1>The Home Page</h1>
+        <div>
+          <label htmlFor="email">Your Email Address</label>
+          <input type="email" id="email" ref={emailInputRef} />
+        </div>
+        <div>
+          <label htmlFor="feedback">Your Feedback</label>
+          <input id="feedback" rows="5" ref={feedbackInputRef} />
+        </div>
+        <button onClick={submitFormHandler}>Send Feedback</button>
+        <button onClick={removeHandler}>Remove Feedback from specified email</button>
+      </section>
+      <p className={classes.overall}>ALL DATABASE DOCUMENTS:</p>
+      {props.mongoData.map((ent, id) => {
+        return <code className={classes.overall}>{JSON.stringify(ent)}</code>;
       })}
-    </section>
+    </>
   );
 }
 
