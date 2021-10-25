@@ -1,17 +1,18 @@
 import React, { useRef, useState, useEffect } from "react";
 import classes from "./index.module.css";
+
 import { MongoClient } from "mongodb";
 
-export async function getServerSideProps() {
-  // READ our database on startup 
+export async function getStaticProps() {
+  // READ our database on startup
   // Can't fetch() API routes directly in pre-render methods, so we write our code manually)
   const cluster = {
-    username: "JasonB",
-    mongoPassword: "TM01Focus",
+    username: "JasonAdmin",
+    mongoPassword: "2BReborn",
     database: "email-list",
     collection: "demo2",
   };
-  const mongoURI = `mongodb+srv://JasonB:${cluster.mongoPassword}@first-cluster.g9k83.mongodb.net/${cluster.database}?retryWrites=true&w=majority`;
+  const mongoURI = `mongodb+srv://JasonAdmin:${cluster.mongoPassword}@cluster0.ufiop.mongodb.net/${cluster.database}?retryWrites=true&w=majority`;
 
   const client = await MongoClient.connect(mongoURI);
   const db = client.db(); // get ahold of that database
@@ -29,13 +30,11 @@ function HomePage(props) {
   const emailInputRef = useRef();
   const feedbackInputRef = useRef();
 
-  // CREATE a new doc when we submit using our form
-  // UPDATE if the email is already in the list
+  // CREATE or UPDATE a doc when we submit, depending on if the email's been used already
   const submitFormHandler = async function (event) {
     event.preventDefault();
     const enteredEmail = emailInputRef.current.value;
     const enteredFeedback = feedbackInputRef.current.value;
-
     const response = await fetch("/api/mongo/crud", {
       method: "POST",
       body: JSON.stringify({
@@ -48,15 +47,23 @@ function HomePage(props) {
     console.log(parsed);
   }; // skipped validation for email/password
 
+  // DELETE a doc if the email field contains an email you've used for a comment
+  const removeHandler = async function (event) {
+    event.preventDefault();
+    const enteredEmail = emailInputRef.current.value;
+    const response = await fetch("/api/mongo/crud", {
+      method: "DELETE",
+      body: JSON.stringify({ email: enteredEmail }),
+      headers: { "Content-Type": "application/json" },
+    });
+    const parsed = await response.json();
+    console.log(parsed);
+  };
 
-  // DELETE if you hit the remove button
-  const removeHandler= async function(){
-
-  }
   return (
     <>
       <section className={classes.overall}>
-        <h1>The Home Page</h1>
+        <h1>Perform CRUD Operations!</h1>
         <div>
           <label htmlFor="email">Your Email Address</label>
           <input type="email" id="email" ref={emailInputRef} />
@@ -66,11 +73,17 @@ function HomePage(props) {
           <input id="feedback" rows="5" ref={feedbackInputRef} />
         </div>
         <button onClick={submitFormHandler}>Send Feedback</button>
-        <button onClick={removeHandler}>Remove Feedback from specified email</button>
+        <button onClick={removeHandler}>
+          Remove Feedback from specified email
+        </button>
       </section>
       <p className={classes.overall}>ALL DATABASE DOCUMENTS:</p>
       {props.mongoData.map((ent, id) => {
-        return <code className={classes.overall}>{JSON.stringify(ent)}</code>;
+        return (
+          <code key={id} className={classes.overall}>
+            {JSON.stringify(ent)}
+          </code>
+        );
       })}
     </>
   );
