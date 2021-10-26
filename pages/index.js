@@ -7,17 +7,32 @@ export async function getStaticProps() {
   // READ our database on startup
   // Can't fetch() API routes directly in pre-render methods, so we write our code manually)
   const cluster = {
-    username: "JasonAdmin",
+    username: "JasonAdmino",
     mongoPassword: "2BReborn",
     database: "email-list",
     collection: "demo2",
   };
-  const mongoURI = `mongodb+srv://JasonAdmin:${cluster.mongoPassword}@cluster0.ufiop.mongodb.net/${cluster.database}?retryWrites=true&w=majority`;
-
-  const client = await MongoClient.connect(mongoURI);
+  const mongoURI = `mongodb+srv://${cluster.username}:${cluster.mongoPassword}@cluster0.ufiop.mongodb.net/${cluster.database}?retryWrites=true&w=majority`;
+  let client;
+  try {
+    client = await MongoClient.connect(mongoURI);
+  } catch (err) {
+    return {
+      props: { mongoData: null, error: "Could not connect to database" },
+      // create some conditional JSX if props.error exists
+    };
+  }
   const db = client.db(); // get ahold of that database
-  const collection = db.collection(cluster.collection);
-  const results = await collection.find().sort().toArray(); // can add .limit() before .toArray()
+  let collection, results;
+  try {
+    collection = db.collection(cluster.collection);
+    results = await collection.find().sort().toArray(); // can add .limit() before .toArray()
+  } catch (err) {
+    return {
+      props: { mongoData: null, error: "Could not read database" },
+      // create some conditional JSX if props.error exists
+    };
+  }
   // Bug workaround ▼▼ (just parse your JSON-ified return from the database)
   const parsedResults = JSON.parse(JSON.stringify(results));
   client.close(); // close the database instance
@@ -60,6 +75,8 @@ function HomePage(props) {
     console.log(parsed);
   };
 
+  if (props.error) return <p>{props.error}</p>;
+
   return (
     <>
       <section className={classes.overall}>
@@ -77,6 +94,7 @@ function HomePage(props) {
           Remove Feedback from specified email
         </button>
       </section>
+
       <p className={classes.overall}>ALL DATABASE DOCUMENTS:</p>
       {props.mongoData.map((ent, id) => {
         return (
