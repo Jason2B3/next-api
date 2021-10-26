@@ -7,7 +7,7 @@ export async function getStaticProps() {
   // READ our database on startup
   // Can't fetch() API routes directly in pre-render methods, so we write our code manually)
   const cluster = {
-    username: "JasonAdmino",
+    username: "JasonAdmin",
     mongoPassword: "2BReborn",
     database: "email-list",
     collection: "demo2",
