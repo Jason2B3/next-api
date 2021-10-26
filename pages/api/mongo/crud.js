@@ -1,6 +1,12 @@
 import { MongoClient } from "mongodb";
 
 export default async function handler(req, res) {
+  function close_res_return(client, endSession, codeNum, message) {
+    if (endSession) client.close(); // can hold off on ending the db session
+    res.status(codeNum).json({ message });
+    return;
+  }
+  // ——————————————————————————————————————————————————————
   const cluster = {
     username: "JasonAdmin",
     mongoPassword: "2BReborn",
@@ -20,7 +26,7 @@ export default async function handler(req, res) {
     try {
       client = await MongoClient.connect(mongoURI);
     } catch (err) {
-      res.status(500).json({ message: "Could not connect to database" });
+      close_res_return(client, false, 500, "Could not connect to database"); // don't end sesh here
       return;
     }
     const db = client.db(); // get ahold of that database
@@ -32,10 +38,7 @@ export default async function handler(req, res) {
         .collection(cluster.collection)
         .findOne({ email: req.body.email });
     } catch (err) {
-      client.close();
-      res
-        .status(500)
-        .json({ message: "Account uniqueness verification failed!" });
+      close_res_return(true, 500, "Account uniqueness verification failed!");
       return;
     }
     //% Error handling 3: In case database insertion fails
@@ -44,12 +47,10 @@ export default async function handler(req, res) {
     if (!check) {
       try {
         await db.collection(cluster.collection).insertOne(feedbackObj);
-        client.close();
-        res.status(200).json({ message: "POST complete" });
+        close_res_return(client, true, 200, "POST complete");
         return;
       } catch (err) {
-        client.close();
-        res.status(500).json({ message: "Account creation failed!" });
+        close_res_return(client, true, 500, "Account creation failed!");
         return;
       }
     }
@@ -60,12 +61,10 @@ export default async function handler(req, res) {
         await db
           .collection(cluster.collection)
           .updateOne({ _id: check._id }, { $set: feedbackObj });
-        client.close();
-        res.status(200).json({ message: "UPDATE complete" });
+        close_res_return(client, true, 200, "UPDATE complete");
         return;
       } catch (error) {
-        client.close();
-        res.status(500).json({ message: "Account update failed!" });
+        close_res_return(client, true, 500, "Account update failed!");
         return;
       }
     }
@@ -77,7 +76,7 @@ export default async function handler(req, res) {
     try {
       client = await MongoClient.connect(mongoURI);
     } catch (err) {
-      res.status(500).json({ message: "Could not connect to database" });
+      close_res_return(client, false, 500, "Could not connect to database"); // don't end sesh here
       return;
     }
     const db = client.db(); // get ahold of that database
@@ -89,8 +88,7 @@ export default async function handler(req, res) {
         .collection(cluster.collection)
         .findOne({ email: req.body.email });
     } catch (err) {
-      client.close();
-      res.status(500).json({ message: "Unique account verification failed!" });
+      close_res_return(client, true, 500, "Unique account verification failed");
       return;
     }
     //% Error handling Part 3: In case database doc delete fails
@@ -98,25 +96,23 @@ export default async function handler(req, res) {
     if (check) {
       try {
         await db.collection(cluster.collection).deleteOne({ _id: check._id });
-        client.close();
-        res.status(200).json({ message: "DELETE complete" });
+        close_res_return(client, true, 200, "DELETE complete");
         return;
       } catch (err) {
-        client.close();
-        res.status(500).json({ message: "Account deletion failed!" });
+        close_res_return(client, true, 500, "Account deletion failed!");
         return;
       }
     }
     // If a doc with that email does not exist, return an error
     if (!check) {
-      client.close();
-      res.status(404).json({ message: "No account found for this email" });
+      close_res_return(client, true, 404, "No account found for this email");
       return;
     }
   } else {
     res
       .status(404)
       .json({ message: "No useful actions for that request type!" });
+    return;
   }
 }
 
